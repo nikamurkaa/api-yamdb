@@ -1,8 +1,9 @@
 from rest_framework import serializers
-from reviews.models import Comment, Review
-from reviews.models import Category, Genre, Title
+from reviews.models import Category, Comment, Genre, Review, Title
+
 
 class ReviewSerializer(serializers.ModelSerializer):
+    """Сериализатор для отзывов."""
     author = serializers.SlugRelatedField(slug_field='username',
                                           read_only=True)
 
@@ -16,18 +17,19 @@ class ReviewSerializer(serializers.ModelSerializer):
                 title_id=self.context['view'].kwargs['title_id'],
                 author=self.context['request'].user
             ).exists():
-                raise serializers.ValidationError('Вы уже оставляли отзыв.')
+                raise serializers.ValidationError(
+                    'Вы уже оставляли отзыв.')
         return data
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    """Сериализатор для комментариев."""
     author = serializers.SlugRelatedField(slug_field='username',
                                           read_only=True)
 
     class Meta:
         model = Comment
         fields = '__all__'
-
 
 
 class CategorySerializer(serializers.ModelSerializer):
