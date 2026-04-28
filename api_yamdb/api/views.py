@@ -25,7 +25,7 @@ User = get_user_model()
 
 class ReviewViewSet(viewsets.ModelViewSet):
     """Viewset для отзывов."""
-    http_method_names = ['get', 'post', 'patch', 'delete'] 
+    http_method_names = ['get', 'post', 'patch', 'delete']
     serializer_class = ReviewSerializer
     permission_classes = [IsAuthenticatedOrReadOnly,
                           IsOwnerOrModeratorOrAdmin]
@@ -44,7 +44,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     """Viewset для комментариев."""
-    http_method_names = ['get', 'post', 'patch', 'delete'] 
+    http_method_names = ['get', 'post', 'patch', 'delete']
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticatedOrReadOnly,
                           IsOwnerOrModeratorOrAdmin]

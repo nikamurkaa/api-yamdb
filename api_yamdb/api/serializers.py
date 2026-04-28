@@ -115,13 +115,17 @@ class TitleWriteSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         return TitleReadSerializer(instance).data
 
+
 class SignUpSerializer(serializers.Serializer):
     username = serializers.CharField(
         max_length=150,
         validators=[
             RegexValidator(
                 regex=r'^[\w.@+-]+\Z',
-                message='Username может содержать только буквы, цифры и символы . @ + - _'
+                message=(
+                    'Username может содержать только буквы, цифры '
+                    'и символы . @ + - _'
+                )
             )
         ]
     )
@@ -142,9 +146,9 @@ class SignUpSerializer(serializers.Serializer):
         else:
             # Если email новый, проверяем username на уникальность
             if User.objects.filter(username=username).exists():
-                raise serializers.ValidationError(
-                    {'username': 'Пользователь с таким username уже существует.'}
-                )
+                raise serializers.ValidationError({
+                    'username': 'Пользователь с таким username уже существует.'
+                })
         return data
 
 
@@ -156,7 +160,10 @@ class TokenSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
+        fields = (
+            'username', 'email', 'first_name',
+            'last_name', 'bio', 'role',
+        )
         read_only_fields = ('role',)
 
     def validate_username(self, value):
@@ -166,7 +173,10 @@ class UserSerializer(serializers.ModelSerializer):
 class AdminUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
+        fields = (
+            'username', 'email', 'first_name',
+            'last_name', 'bio', 'role',
+        )
 
     def validate_username(self, value):
         return validate_username_not_me(value)
