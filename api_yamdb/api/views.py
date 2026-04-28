@@ -1,9 +1,12 @@
-from rest_framework import viewsets, filters
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, viewsets
 from rest_framework.pagination import LimitOffsetPagination
+from reviews.models import Category, Genre, Title
 
-from reviews.models import Category, Genre
-from .serializers import CategorySerializer, GenreSerializer
+from .filters import TitleFilter
 from .permissions import IsAdminOrReadOnly
+from .serializers import (CategorySerializer, GenreSerializer,
+                          TitleReadSerializer, TitleWriteSerializer)
 
 
 class CategoryViewSet(
@@ -37,3 +40,16 @@ class GenreViewSet(
     search_fields = ('name',)
     lookup_field = 'slug'
 
+
+class TitleViewSet(viewsets.ModelViewSet):
+    """Viewset для произведений."""
+    queryset = Title.objects.all()
+    permission_classes = [IsAdminOrReadOnly]
+    pagination_class = LimitOffsetPagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = TitleFilter
+
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return TitleReadSerializer
+        return TitleWriteSerializer
