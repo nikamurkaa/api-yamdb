@@ -14,17 +14,21 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = '__all__'
-        read_only_fields = ('title', 'author', 'pub_date')
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
+        read_only_fields = ('author', 'pub_date')
 
     def validate(self, data):
-        if self.context['request'].method == 'POST':
+        request = self.context.get('request')
+        view = self.context.get('view')
+
+        if request and view and request.method == 'POST':
             if Review.objects.filter(
-                title_id=self.context['view'].kwargs['title_id'],
-                author=self.context['request'].user
+                title_id=view.kwargs['title_id'],
+                author=request.user
             ).exists():
                 raise serializers.ValidationError(
-                    'Вы уже оставляли отзыв.')
+                    'Вы уже оставляли отзыв.'
+                )
         return data
 
 
@@ -68,7 +72,7 @@ class TitleReadSerializer(serializers.ModelSerializer):
 
     def get_rating(self, obj):
         rating = getattr(obj, 'rating', None)
-    
+
         if rating is None:
             rating = obj.reviews.aggregate(Avg('score')).get('score__avg')
 
