@@ -1,15 +1,19 @@
-from django.shortcuts import get_object_or_404
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from .models import Title, Review
-from .permissions import IsOwnerOrModeratorOrAdmin
-from .serializers import CommentSerializer, ReviewSerializer
 from django_filters.rest_framework import DjangoFilterBackend
+from django.shortcuts import get_object_or_404
 from rest_framework import filters, viewsets
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.pagination import LimitOffsetPagination
-from reviews.models import Category, Genre, Title
+from reviews.models import Category, Genre, Title, Title, Review
+
+from .permissions import IsAdminOrReadOnly, IsOwnerOrModeratorOrAdmin
+from .filters import TitleFilter
+from .serializers import (CategorySerializer, CommentSerializer,
+                          GenreSerializer, TitleReadSerializer,
+                          TitleWriteSerializer, ReviewSerializer)
+
 
 class ReviewViewSet(viewsets.ModelViewSet):
+    """Viewset для отзывов."""
     serializer_class = ReviewSerializer
     permission_classes = [IsAuthenticatedOrReadOnly,
                           IsOwnerOrModeratorOrAdmin]
@@ -27,6 +31,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
+    """Viewset для комментариев."""
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticatedOrReadOnly,
                           IsOwnerOrModeratorOrAdmin]
@@ -40,12 +45,6 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user,
                         review=self.get_review_by_id())
-
-
-from .filters import TitleFilter
-from .permissions import IsAdminOrReadOnly
-from .serializers import (CategorySerializer, GenreSerializer,
-                          TitleReadSerializer, TitleWriteSerializer)
 
 
 class CategoryViewSet(
