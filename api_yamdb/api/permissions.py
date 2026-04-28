@@ -4,13 +4,13 @@ from rest_framework.permissions import SAFE_METHODS, BasePermission
 class IsAdmin(BasePermission):
     def has_permission(self, request, view):
         return (request.user and request.user.is_authenticated
-                and request.user.is_admin)
+                and (request.user.role == 'admin' or request.user.is_superuser))
 
 
 class IsModerator(BasePermission):
     def has_permission(self, request, view):
         return (request.user and request.user.is_authenticated
-                and request.user.is_moderator)
+                and request.user.role == 'moderator')
 
 
 class IsOwnerOrModeratorOrAdmin(BasePermission):

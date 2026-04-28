@@ -1,3 +1,4 @@
+from django.core.validators import RegexValidator
 from rest_framework import serializers
 from reviews.models import Category, Comment, Genre, Review, Title
 
@@ -81,8 +82,16 @@ class TitleWriteSerializer(serializers.ModelSerializer):
 
 
 class SignUpSerializer(serializers.Serializer):
-    username = serializers.CharField(max_length=150)
-    email = serializers.EmailField()
+    username = serializers.CharField(
+        max_length=150,
+        validators=[
+            RegexValidator(
+                regex=r'^[\w.@+-]+\Z',
+                message='Username может содержать только буквы, цифры и символы . @ + - _'
+            )
+        ]
+    )
+    email = serializers.EmailField(max_length=254)
 
     def validate_username(self, value):
         if value.lower() == 'me':
