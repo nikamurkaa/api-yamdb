@@ -5,15 +5,13 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from rest_framework import (filters, viewsets,
-                            status, viewsets,
-                            generics, permissions)
+from rest_framework import filters, generics, permissions, status, viewsets
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 
-from reviews.models import Category, Genre, Title, Title, Review
+from reviews.models import Category, Genre, Title, Review
 from .permissions import IsAdminOrReadOnly, IsOwnerOrModeratorOrAdmin, IsAdmin
 from .filters import TitleFilter
 from .serializers import (CategorySerializer, CommentSerializer,
