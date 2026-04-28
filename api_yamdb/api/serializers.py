@@ -1,3 +1,5 @@
+from django.db.models import Avg
+from django.utils import timezone
 from django.core.validators import RegexValidator
 from rest_framework import serializers
 from reviews.models import Category, Comment, Genre, Review, Title
@@ -57,12 +59,22 @@ class TitleReadSerializer(serializers.ModelSerializer):
     """Сериализатор для чтения произведений."""
     category = CategorySerializer()
     genre = GenreSerializer(many=True)
-    rating = serializers.IntegerField(read_only=True)
+    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Title
         fields = ('id', 'name', 'year', 'rating', 'description',
                   'genre', 'category')
+
+    def get_rating(self, obj):
+        rating = getattr(obj, 'rating', None)
+    
+        if rating is None:
+            rating = obj.reviews.aggregate(Avg('score')).get('score__avg')
+
+        if rating is None:
+            return None
+        return int(rating)
 
 
 class TitleWriteSerializer(serializers.ModelSerializer):
@@ -82,6 +94,15 @@ class TitleWriteSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'year', 'description',
                   'genre', 'category')
 
+    def validate_year(self, value):
+        if value > timezone.now().year:
+            raise serializers.ValidationError(
+                'Год выпуска не может быть больше текущего.'
+            )
+        return value
+
+    def to_representation(self, instance):
+        return TitleReadSerializer(instance).data
 
 class SignUpSerializer(serializers.Serializer):
     username = serializers.CharField(
