@@ -1,15 +1,27 @@
+import uuid
+
 from django_filters.rest_framework import DjangoFilterBackend
+from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from rest_framework import filters, viewsets
+from rest_framework import (filters, viewsets,
+                            status, viewsets,
+                            generics, permissions)
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.pagination import LimitOffsetPagination
-from reviews.models import Category, Genre, Title, Title, Review
+from rest_framework.response import Response
 
-from .permissions import IsAdminOrReadOnly, IsOwnerOrModeratorOrAdmin
+from reviews.models import Category, Genre, Title, Title, Review
+from .permissions import IsAdminOrReadOnly, IsOwnerOrModeratorOrAdmin, IsAdmin
 from .filters import TitleFilter
 from .serializers import (CategorySerializer, CommentSerializer,
                           GenreSerializer, TitleReadSerializer,
-                          TitleWriteSerializer, ReviewSerializer)
+                          TitleWriteSerializer, ReviewSerializer,
+                          SignUpSerializer, TokenSerializer,
+                          UserSerializer, AdminUserSerializer)
+
+User = get_user_model()
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -91,3 +103,72 @@ class TitleViewSet(viewsets.ModelViewSet):
         if self.action in ('list', 'retrieve'):
             return TitleReadSerializer
         return TitleWriteSerializer
+
+
+class SignUpView(generics.CreateAPIView):
+    """Регистрация нового пользователя, отправка кода подтверждения."""
+    serializer_class = SignUpSerializer
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        username = serializer.validated_data['username']
+        email = serializer.validated_data['email']
+
+        user, created = User.objects.get_or_create(
+            username=username, email=email
+        )
+        # Генерируем и сохраняем код подтверждения
+        confirmation_code = str(uuid.uuid4())[:8]
+        user.confirmation_code = confirmation_code
+        user.save()
+
+        # Отправка письма (в консоль для разработки)
+        send_mail(
+            subject='Код подтверждения YaMDb',
+            message=f'Ваш код подтверждения: {confirmation_code}',
+            from_email=None,
+            recipient_list=[email],
+            fail_silently=False,
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class TokenView(generics.CreateAPIView):
+    """Получение JWT-токена по username и confirmation_code."""
+    serializer_class = TokenSerializer
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        username = serializer.validated_data['username']
+        code = serializer.validated_data['confirmation_code']
+
+        user = get_object_or_404(User, username=username)
+        if user.confirmation_code != code:
+            return Response(
+                {'confirmation_code': 'Неверный код подтверждения'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # Генерируем JWT
+        refresh = RefreshToken.for_user(user)
+        return Response({'token': str(refresh.access_token)})
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    """Управление пользователями (только для администратора)."""
+    queryset = User.objects.all()
+    serializer_class = AdminUserSerializer
+    permission_classes = (IsAdmin,)
+    lookup_field = 'username'
+
+
+class ProfileView(generics.RetrieveUpdateAPIView):
+    """Профиль текущего пользователя."""
+    serializer_class = UserSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_object(self):
+        return self.request.user
