@@ -7,6 +7,13 @@ from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
 
 
+def validate_username_not_me(value):
+    """Проверяет, что username не равен зарезервированному значению me."""
+    if value.lower() == 'me':
+        raise serializers.ValidationError('Username "me" запрещён.')
+    return value
+
+
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для отзывов."""
     author = serializers.SlugRelatedField(slug_field='username',
@@ -121,9 +128,7 @@ class SignUpSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=254)
 
     def validate_username(self, value):
-        if value.lower() == 'me':
-            raise serializers.ValidationError('Username "me" запрещён')
-        return value
+        return validate_username_not_me(value)
 
     def validate(self, data):
         email = data.get('email')
@@ -142,17 +147,26 @@ class SignUpSerializer(serializers.Serializer):
                 )
         return data
 
+
 class TokenSerializer(serializers.Serializer):
     username = serializers.CharField()
     confirmation_code = serializers.CharField()
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
-        read_only_fields = ('role',)  # роль нельзя менять через профиль
+        read_only_fields = ('role',)
+
+    def validate_username(self, value):
+        return validate_username_not_me(value)
+
 
 class AdminUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
+
+    def validate_username(self, value):
+        return validate_username_not_me(value)

@@ -181,6 +181,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class ProfileView(generics.RetrieveUpdateAPIView):
     """Профиль текущего пользователя."""
+    http_method_names = ['get', 'patch']
     serializer_class = UserSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
