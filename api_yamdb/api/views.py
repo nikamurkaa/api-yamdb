@@ -1,5 +1,6 @@
 import uuid
 
+from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
@@ -96,11 +97,15 @@ class GenreViewSet(
 class TitleViewSet(viewsets.ModelViewSet):
     """Viewset для произведений."""
     http_method_names = ['get', 'post', 'patch', 'delete']
-    queryset = Title.objects.all()
     permission_classes = [IsAdminOrReadOnly]
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
+
+    def get_queryset(self):
+        return Title.objects.select_related('category').prefetch_related(
+            'genre'
+        ).annotate(rating=Avg('reviews__score'))
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
