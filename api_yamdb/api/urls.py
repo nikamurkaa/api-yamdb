@@ -14,11 +14,12 @@ v1_router.register(r'genres',
                    GenreViewSet, basename='genre')
 v1_router.register(r'titles',
                    TitleViewSet, basename='title')
-v1_router.register(r'reviews',
-                   ReviewViewSet, basename='review')
-v1_router.register(r'reviews/(?P<review_id>\d+)/comments',
-                   CommentViewSet, basename='review-comments')
-v1_router.register('users', UserViewSet, basename='user')
+v1_router.register(r'titles/(?P<title_id>\d+)/reviews',
+                   ReviewViewSet, basename='title-reviews')
+v1_router.register(
+    r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments',
+    CommentViewSet, basename='review-comments')
+v1_router.register(r'users', UserViewSet, basename='user')
 
 urlpatterns = [
     path('auth/signup/', SignUpView.as_view(), name='signup'),
