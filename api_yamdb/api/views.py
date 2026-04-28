@@ -52,7 +52,11 @@ class CommentViewSet(viewsets.ModelViewSet):
                           IsOwnerOrModeratorOrAdmin]
 
     def get_review_by_id(self):
-        return get_object_or_404(Review, pk=self.kwargs['review_id'])
+        return get_object_or_404(
+            Review,
+            pk=self.kwargs['review_id'],
+            title_id=self.kwargs['title_id'],
+        )
 
     def get_queryset(self):
         return self.get_review_by_id().comments.all()
