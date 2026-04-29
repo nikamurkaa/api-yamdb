@@ -32,7 +32,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
     """Viewset для отзывов."""
     http_method_names = FULL_CRUD_METHODS
     serializer_class = ReviewSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly, IsOwnerOrModeratorOrAdmin,)
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsOwnerOrModeratorOrAdmin,)
 
     def get_title_by_id(self):
         return get_object_or_404(Title, pk=self.kwargs['title_id'])
@@ -50,7 +51,8 @@ class CommentViewSet(viewsets.ModelViewSet):
     """Viewset для комментариев."""
     http_method_names = FULL_CRUD_METHODS
     serializer_class = CommentSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly, IsOwnerOrModeratorOrAdmin,)
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsOwnerOrModeratorOrAdmin,)
 
     def get_review_by_id(self):
         return get_object_or_404(
