@@ -1,18 +1,17 @@
 import uuid
 
+from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from rest_framework import (filters, viewsets,
-                            status, viewsets,
-                            generics, permissions)
+from rest_framework import filters, generics, permissions, status, viewsets
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 
-from reviews.models import Category, Genre, Title, Title, Review
+from reviews.models import Category, Genre, Title, Review
 from .permissions import IsAdminOrReadOnly, IsOwnerOrModeratorOrAdmin, IsAdmin
 from .filters import TitleFilter
 from .serializers import (CategorySerializer, CommentSerializer,
@@ -26,7 +25,7 @@ User = get_user_model()
 
 class ReviewViewSet(viewsets.ModelViewSet):
     """Viewset для отзывов."""
-    http_method_names = ['get', 'post', 'patch', 'delete'] 
+    http_method_names = ['get', 'post', 'patch', 'delete']
     serializer_class = ReviewSerializer
     permission_classes = [IsAuthenticatedOrReadOnly,
                           IsOwnerOrModeratorOrAdmin]
@@ -45,13 +44,17 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     """Viewset для комментариев."""
-    http_method_names = ['get', 'post', 'patch', 'delete'] 
+    http_method_names = ['get', 'post', 'patch', 'delete']
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticatedOrReadOnly,
                           IsOwnerOrModeratorOrAdmin]
 
     def get_review_by_id(self):
-        return get_object_or_404(Review, pk=self.kwargs['review_id'])
+        return get_object_or_404(
+            Review,
+            pk=self.kwargs['review_id'],
+            title_id=self.kwargs['title_id'],
+        )
 
     def get_queryset(self):
         return self.get_review_by_id().comments.all()
@@ -96,11 +99,15 @@ class GenreViewSet(
 class TitleViewSet(viewsets.ModelViewSet):
     """Viewset для произведений."""
     http_method_names = ['get', 'post', 'patch', 'delete']
-    queryset = Title.objects.all()
     permission_classes = [IsAdminOrReadOnly]
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
+
+    def get_queryset(self):
+        return Title.objects.select_related('category').prefetch_related(
+            'genre'
+        ).annotate(rating=Avg('reviews__score'))
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
@@ -172,6 +179,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class ProfileView(generics.RetrieveUpdateAPIView):
     """Профиль текущего пользователя."""
+    http_method_names = ['get', 'patch']
     serializer_class = UserSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
