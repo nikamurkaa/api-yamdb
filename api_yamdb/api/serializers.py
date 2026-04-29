@@ -21,12 +21,12 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = ('id', 'text', 'author', 'score', 'pub_date')
-        read_only_fields = ('author', 'pub_date')
+        fields = '__all__'
+        read_only_fields = ('author', 'pub_date', 'title')
 
     def validate(self, data):
-        request = self.context.get('request')
-        view = self.context.get('view')
+        request = self.context['request']
+        view = self.context['view']
 
         if request and view and request.method == 'POST':
             if Review.objects.filter(
@@ -46,7 +46,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ('id', 'text', 'author', 'pub_date')
+        fields = '__all__'
         read_only_fields = ('author', 'pub_date', 'review')
 
 
@@ -102,8 +102,8 @@ class TitleWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Title
-        fields = ('id', 'name', 'year', 'description',
-                  'genre', 'category')
+        fields = '__all__'
+        read_only_fields = ('id', 'rating')
 
     def validate_year(self, value):
         if value > timezone.now().year:
@@ -144,7 +144,6 @@ class SignUpSerializer(serializers.Serializer):
                     {'email': 'Пользователь с таким email уже существует.'}
                 )
         else:
-            # Если email новый, проверяем username на уникальность
             if User.objects.filter(username=username).exists():
                 raise serializers.ValidationError({
                     'username': 'Пользователь с таким username уже существует.'

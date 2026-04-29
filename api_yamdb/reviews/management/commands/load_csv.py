@@ -1,5 +1,3 @@
-"""Загрузка данных Yamdb из CSV-файлов."""
-
 import csv
 
 from django.conf import settings
@@ -17,7 +15,6 @@ DEFAULT_USER_ROLE = 'user'
 
 class Command(BaseCommand):
     """Команда для импорта начальных данных проекта из CSV."""
-
     help = 'Загружает данные из CSV-файлов в базу данных.'
     data_dir = settings.BASE_DIR / 'static' / 'data'
 
@@ -32,10 +29,8 @@ class Command(BaseCommand):
             self._load_reviews,
             self._load_comments,
         )
-
         for loader in loaders:
             loader()
-
         self.stdout.write(
             self.style.SUCCESS('Данные из CSV успешно загружены.')
         )
@@ -43,23 +38,19 @@ class Command(BaseCommand):
     def _get_file_path(self, filename):
         """Возвращает путь к CSV-файлу и проверяет его наличие."""
         file_path = self.data_dir / filename
-
         if not file_path.exists():
             raise CommandError(f'Файл {file_path} не найден.')
-
         return file_path
 
     def _read_csv(self, filename):
         """Читает CSV-файл и возвращает строки в виде словарей."""
         file_path = self._get_file_path(filename)
-
         with file_path.open(encoding='utf-8-sig', newline='') as csv_file:
             yield from csv.DictReader(csv_file)
 
     def _get_int(self, row, field_name):
         """Возвращает числовое значение поля из строки CSV."""
         value = row.get(field_name)
-
         try:
             return int(value)
         except (TypeError, ValueError) as error:
@@ -70,22 +61,17 @@ class Command(BaseCommand):
     def _get_optional_int(self, row, field_name):
         """Возвращает число или None для необязательного поля CSV."""
         value = row.get(field_name)
-
         if not value:
             return None
-
         return self._get_int(row, field_name)
 
     def _parse_datetime(self, value):
         """Преобразует строку из CSV в объект даты и времени."""
         date_time = parse_datetime(value)
-
         if date_time is None:
             raise CommandError(f'Некорректное значение даты: {value}')
-
         if timezone.is_naive(date_time):
             date_time = timezone.make_aware(date_time)
-
         return date_time
 
     def _update_pub_date(self, model, object_id, value):
@@ -118,7 +104,6 @@ class Command(BaseCommand):
                     'last_name': row.get('last_name') or '',
                 },
             )
-
             if created:
                 user.set_unusable_password()
                 user.save(update_fields=('password',))
