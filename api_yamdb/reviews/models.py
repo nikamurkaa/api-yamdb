@@ -1,7 +1,6 @@
-from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
-
 from django.contrib.auth import get_user_model
+from django.db import models
 
 User = get_user_model()
 
@@ -53,7 +52,7 @@ class Title(models.Model):
         ordering = ('name',)
 
     def __str__(self):
-        return self.name
+        return f'{self.name}: {self.year}, {self.description}'
 
 
 class Review(models.Model):
