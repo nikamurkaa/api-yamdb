@@ -5,6 +5,8 @@ from django.db import models
 from .constants import (MAX_LENGTH_NAME, MAX_LENGTH_SLUG,
                         MIN_SCORE, MAX_SCORE, MAX_LENGTH_TEXT_STR)
 
+from .validators import validate_year_not_future
+
 User = get_user_model()
 
 
@@ -36,7 +38,13 @@ class Genre(models.Model):
 
 class Title(models.Model):
     name = models.CharField(max_length=MAX_LENGTH_NAME)
-    year = models.PositiveIntegerField()
+    year = models.PositiveSmallIntegerField(
+        validators=(
+            MinValueValidator(1),
+            validate_year_not_future,
+        ),
+        verbose_name='Год выпуска',
+    )
     description = models.TextField(blank=True)
     category = models.ForeignKey(
         Category,

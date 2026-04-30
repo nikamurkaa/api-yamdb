@@ -97,13 +97,6 @@ class TitleWriteSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('rating',)
 
-    def validate_year(self, value):
-        if value > timezone.now().year:
-            raise serializers.ValidationError(
-                'Год выпуска не может быть больше текущего.'
-            )
-        return value
-
     def to_representation(self, instance):
         return TitleReadSerializer(instance).data
 
