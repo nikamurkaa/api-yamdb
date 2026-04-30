@@ -10,6 +10,7 @@ from rest_framework import (filters, generics, permissions,
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.exceptions import MethodNotAllowed, NotFound
 from rest_framework.response import Response
+from rest_framework.pagination import LimitOffsetPagination
 
 from reviews.models import Category, Genre, Title, Review
 from .filters import TitleFilter
@@ -110,6 +111,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     http_method_names = FULL_CRUD_METHODS
     permission_classes = (IsAdminOrReadOnly,)
+    pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
     filterset_class = TitleFilter
     ordering_fields = ('name', 'year', 'genre')
