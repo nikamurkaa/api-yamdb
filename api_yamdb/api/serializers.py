@@ -31,16 +31,11 @@ class ReviewSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         view = self.context.get('view')
 
-        if request and request.method != 'POST':
+        if not (request and request.method == 'POST' and view):
             return data
 
-        if not (request and view and 'title_id' in view.kwargs):
-            return data
-
-        if Review.objects.filter(
-                title_id=view.kwargs['title_id'],
-                author=request.user
-        ).exists():
+        title_id = view.kwargs.get('title_id')
+        if request.user.reviews.filter(title_id=title_id).exists():
             raise serializers.ValidationError('Вы уже оставляли отзыв.')
 
         return data
