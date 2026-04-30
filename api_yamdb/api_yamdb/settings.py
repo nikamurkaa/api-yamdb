@@ -47,6 +47,7 @@ MIDDLEWARE = [
 AUTH_USER_MODEL = 'users.User'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'webmaster@localhost'
 
 ROOT_URLCONF = 'api_yamdb.urls'
 
