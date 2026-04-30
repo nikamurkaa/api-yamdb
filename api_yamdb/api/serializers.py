@@ -122,18 +122,25 @@ class SignUpSerializer(serializers.Serializer):
     )
     email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
 
-    def validate(self, data):
-        email = data.get('email')
-        username = data.get('username')
-        if User.objects.filter(username=username).exclude(email=email).exists():
-            raise serializers.ValidationError({
-                'username': 'Пользователь с таким username уже существует.'
-            })
-        if User.objects.filter(email=email).exclude(username=username).exists():
-            raise serializers.ValidationError(
-                {'email': 'Пользователь с таким email уже существует.'}
-            )
-        return data
+def validate(self, data):
+    email = data.get('email')
+    username = data.get('username')
+    username_exists = User.objects.filter(
+        username=username,
+    ).exclude(email=email).exists()
+    email_exists = User.objects.filter(
+        email=email,
+    ).exclude(username=username).exists()
+
+    if username_exists:
+        raise serializers.ValidationError({
+            'username': 'Пользователь с таким username уже существует.'
+        })
+    if email_exists:
+        raise serializers.ValidationError(
+            {'email': 'Пользователь с таким email уже существует.'}
+        )
+    return data
 
 
 class TokenSerializer(serializers.Serializer):
