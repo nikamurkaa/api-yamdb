@@ -15,6 +15,7 @@ DEFAULT_USER_ROLE = 'user'
 
 class Command(BaseCommand):
     """Команда для импорта начальных данных проекта из CSV."""
+
     help = 'Загружает данные из CSV-файлов в базу данных.'
     data_dir = settings.BASE_DIR / 'static' / 'data'
 

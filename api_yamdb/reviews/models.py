@@ -2,12 +2,15 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.contrib.auth import get_user_model
 from django.db import models
 
+from .constants import (MAX_LENGTH_NAME, MAX_LENGTH_SLUG,
+                        MIN_SCORE, MAX_SCORE, MAX_LENGTH_TEXT_STR)
+
 User = get_user_model()
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=256)
-    slug = models.SlugField(max_length=50, unique=True)
+    name = models.CharField(max_length=MAX_LENGTH_NAME)
+    slug = models.SlugField(max_length=MAX_LENGTH_SLUG, unique=True)
 
     class Meta:
         verbose_name = 'Категория'
@@ -19,8 +22,8 @@ class Category(models.Model):
 
 
 class Genre(models.Model):
-    name = models.CharField(max_length=256)
-    slug = models.SlugField(max_length=50, unique=True)
+    name = models.CharField(max_length=MAX_LENGTH_NAME)
+    slug = models.SlugField(max_length=MAX_LENGTH_SLUG, unique=True)
 
     class Meta:
         verbose_name = 'Жанр'
@@ -32,7 +35,7 @@ class Genre(models.Model):
 
 
 class Title(models.Model):
-    name = models.CharField(max_length=256)
+    name = models.CharField(max_length=MAX_LENGTH_NAME)
     year = models.PositiveIntegerField()
     description = models.TextField(blank=True)
     category = models.ForeignKey(
@@ -64,8 +67,8 @@ class Review(models.Model):
                                related_name='reviews')
     text = models.TextField()
     score = models.PositiveSmallIntegerField(validators=[
-        MinValueValidator(1),
-        MaxValueValidator(10)])
+        MinValueValidator(MIN_SCORE),
+        MaxValueValidator(MAX_SCORE)])
     pub_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -75,7 +78,8 @@ class Review(models.Model):
         ordering = ('-pub_date',)
 
     def __str__(self):
-        return f'{self.author}: {self.title}, {self.score}. {self.text[:30]}'
+        return (f'{self.author}: {self.title}, {self.score}. '
+                f'{self.text[:MAX_LENGTH_TEXT_STR]}')
 
 
 class Comment(models.Model):
@@ -94,4 +98,5 @@ class Comment(models.Model):
         ordering = ('-pub_date',)
 
     def __str__(self):
-        return f'{self.author}: {self.review}. {self.text[:30]}'
+        return (f'{self.author}: {self.review}. '
+                f'{self.text[:MAX_LENGTH_TEXT_STR]}')

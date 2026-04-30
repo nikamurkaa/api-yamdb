@@ -1,14 +1,16 @@
+from django.contrib.auth import get_user_model
 from django.db.models import Avg
 from django.utils import timezone
 from django.core.validators import RegexValidator
 from rest_framework import serializers
 from reviews.models import Category, Comment, Genre, Review, Title
 
-from users.models import User
+User = get_user_model()
 
 
 def validate_username_not_me(value):
     """Проверяет, что username не равен зарезервированному значению me."""
+
     if value.lower() == 'me':
         raise serializers.ValidationError('Username "me" запрещён.')
     return value
@@ -16,6 +18,7 @@ def validate_username_not_me(value):
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для отзывов."""
+
     author = serializers.SlugRelatedField(slug_field='username',
                                           read_only=True)
 
@@ -27,7 +30,6 @@ class ReviewSerializer(serializers.ModelSerializer):
     def validate(self, data):
         request = self.context['request']
         view = self.context['view']
-
         if request and view and request.method == 'POST':
             if Review.objects.filter(
                 title_id=view.kwargs['title_id'],
@@ -41,6 +43,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     """Сериализатор для комментариев."""
+
     author = serializers.SlugRelatedField(slug_field='username',
                                           read_only=True)
 
@@ -68,6 +71,7 @@ class GenreSerializer(serializers.ModelSerializer):
 
 class TitleReadSerializer(serializers.ModelSerializer):
     """Сериализатор для чтения произведений."""
+
     category = CategorySerializer()
     genre = GenreSerializer(many=True)
     rating = serializers.SerializerMethodField()
@@ -79,10 +83,8 @@ class TitleReadSerializer(serializers.ModelSerializer):
 
     def get_rating(self, obj):
         rating = getattr(obj, 'rating', None)
-
         if rating is None:
             rating = obj.reviews.aggregate(Avg('score')).get('score__avg')
-
         if rating is None:
             return None
         return int(rating)
@@ -90,6 +92,7 @@ class TitleReadSerializer(serializers.ModelSerializer):
 
 class TitleWriteSerializer(serializers.ModelSerializer):
     """Сериализатор для создания/обновления произведений."""
+    
     category = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Category.objects.all(),
