@@ -2,14 +2,14 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 
-from .validators import validate_username_not_me
-
-USERNAME_MAX_LENGTH = 150
-EMAIL_MAX_LENGTH = 254
-ROLE_MAX_LENGTH = 20
+from .constants import (EMAIL_MAX_LENGTH, ROLE_MAX_LENGTH,
+                        USERNAME_MAX_LENGTH)
+from .validators import validate_username_not_reserved
 
 
 class User(AbstractUser):
+    """Кастомная модель пользователя."""
+
     class Role(models.TextChoices):
         USER = 'user', 'Пользователь'
         MODERATOR = 'moderator', 'Модератор'
@@ -18,11 +18,12 @@ class User(AbstractUser):
     username = models.CharField(
         max_length=USERNAME_MAX_LENGTH,
         unique=True,
-        validators=(UnicodeUsernameValidator(), validate_username_not_me),
+        validators=(UnicodeUsernameValidator(),
+                    validate_username_not_reserved),
         error_messages={
             'unique': 'Пользователь с таким username уже существует.',
         },
-        verbose_name='Имя пользователя',
+        verbose_name='имя пользователя',
     )
     role = models.CharField(
         max_length=ROLE_MAX_LENGTH,
@@ -32,12 +33,12 @@ class User(AbstractUser):
     )
     bio = models.TextField(
         blank=True,
-        verbose_name='Биография',
+        verbose_name='биография',
     )
     email = models.EmailField(
         max_length=EMAIL_MAX_LENGTH,
         unique=True,
-        verbose_name='Электронная почта',
+        verbose_name='электронная почта',
     )
 
     class Meta:
@@ -55,7 +56,11 @@ class User(AbstractUser):
 
     @property
     def is_moderator(self):
-        return self.role == self.Role.MODERATOR or self.is_admin
+        return (
+            self.role == self.Role.MODERATOR
+            or self.is_admin
+            or self.is_superuser
+        )
 
     def __str__(self):
         return self.username

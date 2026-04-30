@@ -36,10 +36,9 @@ class ReviewViewSet(viewsets.ModelViewSet):
     permission_classes = (IsOwnerOrModeratorOrAdminReadOnly,)
 
     def get_title(self):
-        title_id = self.kwargs.get('title_id')
-        if title_id is None:
-            raise NotFound(detail='В запросе не указан id произведения.')
-        return get_object_or_404(Title, pk=title_id)
+        if 'title_id' not in self.kwargs:
+            raise NotFound(detail="В запросе не указан id произведения.")
+        return get_object_or_404(Title, pk=self.kwargs['title_id'])
 
     def get_queryset(self):
         return self.get_title().reviews.all()
@@ -56,19 +55,18 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = (IsOwnerOrModeratorOrAdminReadOnly,)
 
     def get_review(self):
-        title_id = self.kwargs.get('title_id')
-        review_id = self.kwargs.get('review_id')
-        if title_id is None:
-            raise NotFound(detail='В запросе не указан id произведения.')
-        if review_id is None:
-            raise NotFound(detail='В запросе не указан id отзыва.')
-        return get_object_or_404(Review, pk=review_id, title_id=title_id)
+        if 'review_id' not in self.kwargs:
+            raise NotFound(detail="В запросе не указан id произведения.")
+        if 'review_id' not in self.kwargs:
+            raise NotFound(detail="В запросе не указан id отзыва.")
+        return get_object_or_404(Review, pk=self.kwargs['review_id'])
 
     def get_queryset(self):
         return self.get_review().comments.all()
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user, review=self.get_review())
+        serializer.save(author=self.request.user,
+                        review=self.get_review())
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
