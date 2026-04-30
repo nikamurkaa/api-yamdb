@@ -1,25 +1,24 @@
-import uuid
-
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import (filters, generics, permissions,
-                            status, viewsets)
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import filters, generics, permissions, viewsets
 from rest_framework.exceptions import MethodNotAllowed, NotFound
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import AccessToken
 
-from reviews.models import Category, Genre, Title, Review
+from reviews.models import Category, Genre, Review, Title
 from .filters import TitleFilter
 from .permissions import (IsAdmin, IsAdminOrReadOnly,
                           IsOwnerOrModeratorOrAdminReadOnly)
 from .serializers import (AdminUserSerializer, CategorySerializer,
                           CommentSerializer, GenreSerializer,
-                          ReviewSerializer, TitleReadSerializer,
-                          TitleWriteSerializer, TokenSerializer,
-                          SignUpSerializer, UserSerializer)
+                          ReviewSerializer, SignUpSerializer,
+                          TitleReadSerializer, TitleWriteSerializer,
+                          TokenSerializer, UserSerializer)
 
 User = get_user_model()
 
@@ -36,17 +35,16 @@ class ReviewViewSet(viewsets.ModelViewSet):
     permission_classes = (IsOwnerOrModeratorOrAdminReadOnly,)
 
     def get_title(self):
-        if 'title_id' not in self.kwargs:
-            raise NotFound(detail="В запросе не указан id произведения.")
-        return get_object_or_404(Title, pk=self.kwargs['title_id'])
+        title_id = self.kwargs.get('title_id')
+        if title_id is None:
+            raise NotFound(detail='В запросе не указан id произведения.')
+        return get_object_or_404(Title, pk=title_id)
 
     def get_queryset(self):
         return self.get_title().reviews.all()
 
     def perform_create(self, serializer):
-        serializer.save(
-            author=self.request.user,
-            title=self.get_title())
+        serializer.save(author=self.request.user, title=self.get_title())
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -57,22 +55,19 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = (IsOwnerOrModeratorOrAdminReadOnly,)
 
     def get_review(self):
-        if 'title_id' not in self.kwargs:
-            raise NotFound(detail="В запросе не указан id произведения.")
-        if 'review_id' not in self.kwargs:
-            raise NotFound(detail="В запросе не указан id отзыва.")
-        return get_object_or_404(
-            Review,
-            pk=self.kwargs['review_id'],
-            title_id=self.kwargs['title_id'],
-        )
+        title_id = self.kwargs.get('title_id')
+        review_id = self.kwargs.get('review_id')
+        if title_id is None:
+            raise NotFound(detail='В запросе не указан id произведения.')
+        if review_id is None:
+            raise NotFound(detail='В запросе не указан id отзыва.')
+        return get_object_or_404(Review, pk=review_id, title_id=title_id)
 
     def get_queryset(self):
         return self.get_review().comments.all()
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user,
-                        review=self.get_review())
+        serializer.save(author=self.request.user, review=self.get_review())
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -125,6 +120,8 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 
 class SignUpView(generics.CreateAPIView):
+    """Регистрация пользователя и отправка кода подтверждения."""
+
     serializer_class = SignUpSerializer
     permission_classes = (permissions.AllowAny,)
 
@@ -133,20 +130,22 @@ class SignUpView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         username = serializer.validated_data['username']
         email = serializer.validated_data['email']
-        user = User.objects.filter(email=email).first()
-        if not user:
-            user = User.objects.create_user(username=username, email=email)
-        confirmation_code = str(uuid.uuid4())[:8]
-        user.confirmation_code = confirmation_code
-        user.save()
+        user, created = User.objects.get_or_create(
+            username=username,
+            defaults={'email': email},
+        )
+        if created:
+            user.set_unusable_password()
+            user.save(update_fields=('password',))
+        confirmation_code = default_token_generator.make_token(user)
         send_mail(
             subject='Код подтверждения YaMDb',
             message=f'Ваш код подтверждения: {confirmation_code}',
-            from_email=None,
-            recipient_list=[email],
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=(email,),
             fail_silently=True,
         )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data)
 
 
 class TokenView(generics.CreateAPIView):
@@ -158,16 +157,9 @@ class TokenView(generics.CreateAPIView):
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        username = serializer.validated_data['username']
-        code = serializer.validated_data['confirmation_code']
-        user = get_object_or_404(User, username=username)
-        if user.confirmation_code != code:
-            return Response(
-                {'confirmation_code': 'Неверный код подтверждения'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        refresh = RefreshToken.for_user(user)
-        return Response({'token': str(refresh.access_token)})
+        user = serializer.validated_data['user']
+        token = AccessToken.for_user(user)
+        return Response({'token': str(token)})
 
 
 class UserViewSet(viewsets.ModelViewSet):
