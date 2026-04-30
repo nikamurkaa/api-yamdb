@@ -28,16 +28,21 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only_fields = ('title',)
 
     def validate(self, data):
-        request = self.context['request']
-        view = self.context['view']
-        if request and view and request.method == 'POST':
-            if Review.objects.filter(
+        request = self.context.get('request')
+        view = self.context.get('view')
+
+        if request and request.method != 'POST':
+            return data
+
+        if not (request and view and 'title_id' in view.kwargs):
+            return data
+
+        if Review.objects.filter(
                 title_id=view.kwargs['title_id'],
                 author=request.user
-            ).exists():
-                raise serializers.ValidationError(
-                    'Вы уже оставляли отзыв.'
-                )
+        ).exists():
+            raise serializers.ValidationError('Вы уже оставляли отзыв.')
+
         return data
 
 
