@@ -16,11 +16,15 @@ def validate_username_not_me(username: str):
     return username
 
 
-class ReviewSerializer(serializers.ModelSerializer):
-    """Сериализатор для отзывов."""
+class AuthorReadOnlySerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True
+    )
 
-    author = serializers.SlugRelatedField(slug_field='username',
-                                          read_only=True)
+
+class ReviewSerializer(AuthorReadOnlySerializer):
+    """Сериализатор для отзывов."""
 
     class Meta:
         model = Review
@@ -41,16 +45,13 @@ class ReviewSerializer(serializers.ModelSerializer):
         return data
 
 
-class CommentSerializer(serializers.ModelSerializer):
+class CommentSerializer(AuthorReadOnlySerializer):
     """Сериализатор для комментариев."""
-
-    author = serializers.SlugRelatedField(slug_field='username',
-                                          read_only=True)
 
     class Meta:
         model = Comment
         fields = '__all__'
-        read_only_fields = ('author', 'pub_date', 'review')
+        read_only_fields = ('review',)
 
 
 class CategorySerializer(serializers.ModelSerializer):
