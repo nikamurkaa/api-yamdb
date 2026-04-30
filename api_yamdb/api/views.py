@@ -8,13 +8,13 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import (filters, generics, permissions,
                             status, viewsets)
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.exceptions import MethodNotAllowed, NotFound
 from rest_framework.response import Response
 
 from reviews.models import Category, Genre, Title, Review
 from .filters import TitleFilter
 from .permissions import (IsAdmin, IsAdminOrReadOnly,
-                          IsOwnerOrModeratorOrAdmin)
+                          IsOwnerOrModeratorOrAdminReadOnly)
 from .serializers import (AdminUserSerializer, CategorySerializer,
                           CommentSerializer, GenreSerializer,
                           ReviewSerializer, TitleReadSerializer,
@@ -30,31 +30,37 @@ READ_UPDATE_METHODS = ['get', 'patch']
 
 class ReviewViewSet(viewsets.ModelViewSet):
     """Viewset для отзывов."""
+
     http_method_names = FULL_CRUD_METHODS
     serializer_class = ReviewSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,
-                          IsOwnerOrModeratorOrAdmin,)
+    permission_classes = (IsOwnerOrModeratorOrAdminReadOnly,)
 
-    def get_title_by_id(self):
+    def get_title(self):
+        if 'title_id' not in self.kwargs:
+            raise NotFound(detail="В запросе не указан id произведения.")
         return get_object_or_404(Title, pk=self.kwargs['title_id'])
 
     def get_queryset(self):
-        return self.get_title_by_id().reviews.all()
+        return self.get_title().reviews.all()
 
     def perform_create(self, serializer):
         serializer.save(
             author=self.request.user,
-            title=self.get_title_by_id())
+            title=self.get_title())
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     """Viewset для комментариев."""
+
     http_method_names = FULL_CRUD_METHODS
     serializer_class = CommentSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,
-                          IsOwnerOrModeratorOrAdmin,)
+    permission_classes = (IsOwnerOrModeratorOrAdminReadOnly,)
 
-    def get_review_by_id(self):
+    def get_review(self):
+        if 'title_id' not in self.kwargs:
+            raise NotFound(detail="В запросе не указан id произведения.")
+        if 'review_id' not in self.kwargs:
+            raise NotFound(detail="В запросе не указан id отзыва.")
         return get_object_or_404(
             Review,
             pk=self.kwargs['review_id'],
@@ -62,51 +68,48 @@ class CommentViewSet(viewsets.ModelViewSet):
         )
 
     def get_queryset(self):
-        return self.get_review_by_id().comments.all()
+        return self.get_review().comments.all()
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user,
-                        review=self.get_review_by_id())
+                        review=self.get_review())
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
     """Viewset для категорий произведений."""
+
     http_method_names = READ_CREATE_DELETE_METHODS
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (IsAuthenticatedOrReadOnly, IsAdminOrReadOnly,)
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
 
     def retrieve(self, request, *args, **kwargs):
-        return Response(
-            {'detail': 'Метод GET для отдельной категории запрещен.'},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
+        raise MethodNotAllowed(method='GET')
 
 
 class GenreViewSet(viewsets.ModelViewSet):
     """Viewset для жанров произведений."""
+
     http_method_names = READ_CREATE_DELETE_METHODS
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly, IsAdminOrReadOnly,)
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
 
     def retrieve(self, request, *args, **kwargs):
-        return Response(
-            {'detail': 'Метод GET для отдельного жанра запрещен.'},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
+        raise MethodNotAllowed(method='GET')
 
 
 class TitleViewSet(viewsets.ModelViewSet):
     """Viewset для произведений."""
+
     http_method_names = FULL_CRUD_METHODS
-    permission_classes = (IsAuthenticatedOrReadOnly, IsAdminOrReadOnly,)
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
 
@@ -148,6 +151,7 @@ class SignUpView(generics.CreateAPIView):
 
 class TokenView(generics.CreateAPIView):
     """Получение JWT-токена по username и confirmation_code."""
+
     serializer_class = TokenSerializer
     permission_classes = (permissions.AllowAny,)
 
@@ -168,6 +172,7 @@ class TokenView(generics.CreateAPIView):
 
 class UserViewSet(viewsets.ModelViewSet):
     """Управление пользователями (только для администратора)."""
+
     http_method_names = FULL_CRUD_METHODS
     queryset = User.objects.all()
     serializer_class = AdminUserSerializer
@@ -179,6 +184,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class ProfileView(generics.RetrieveUpdateAPIView):
     """Профиль текущего пользователя."""
+
     http_method_names = READ_UPDATE_METHODS
     serializer_class = UserSerializer
     permission_classes = (permissions.IsAuthenticated,)
