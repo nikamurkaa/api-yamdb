@@ -3,23 +3,23 @@ import uuid
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.db.models import Avg
+from django.db.models.functions import Round
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import (filters, generics, permissions,
-                            status, viewsets)
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import filters, generics, permissions, status, viewsets
 from rest_framework.exceptions import MethodNotAllowed, NotFound
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+from reviews.models import Category, Genre, Review, Title
 
-from reviews.models import Category, Genre, Title, Review
 from .filters import TitleFilter
 from .permissions import (IsAdmin, IsAdminOrReadOnly,
                           IsOwnerOrModeratorOrAdminReadOnly)
 from .serializers import (AdminUserSerializer, CategorySerializer,
-                          CommentSerializer, GenreSerializer,
-                          ReviewSerializer, TitleReadSerializer,
+                          CommentSerializer, GenreSerializer, ReviewSerializer,
+                          SignUpSerializer, TitleReadSerializer,
                           TitleWriteSerializer, TokenSerializer,
-                          SignUpSerializer, UserSerializer)
+                          UserSerializer)
 
 User = get_user_model()
 
@@ -110,16 +110,17 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     http_method_names = FULL_CRUD_METHODS
     permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (DjangoFilterBackend,)
+    filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
     filterset_class = TitleFilter
+    ordering_fields = ('name', 'year', 'genre')
 
     def get_queryset(self):
         return Title.objects.select_related('category').prefetch_related(
             'genre'
-        ).annotate(rating=Avg('reviews__score'))
+        ).annotate(rating=Round(Avg('reviews__score')))
 
     def get_serializer_class(self):
-        if self.action in ('list', 'retrieve'):
+        if self.action in {'list', 'retrieve'}:
             return TitleReadSerializer
         return TitleWriteSerializer
 
