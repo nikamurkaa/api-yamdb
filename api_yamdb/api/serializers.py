@@ -8,12 +8,12 @@ from reviews.models import Category, Comment, Genre, Review, Title
 User = get_user_model()
 
 
-def validate_username_not_me(value):
+def validate_username_not_me(username: str):
     """Проверяет, что username не равен зарезервированному значению me."""
 
-    if value.lower() == 'me':
+    if username.lower() == 'me':
         raise serializers.ValidationError('Username "me" запрещён.')
-    return value
+    return username
 
 
 class ReviewSerializer(serializers.ModelSerializer):
