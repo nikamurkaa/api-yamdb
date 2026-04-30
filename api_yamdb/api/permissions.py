@@ -14,11 +14,10 @@ class IsOwnerOrModeratorOrAdminReadOnly(IsAuthenticatedOrReadOnly):
     """Разрешает изменение автору, модератору или администратору."""
 
     def has_object_permission(self, request, view, review_or_comment):
-        if request.method in SAFE_METHODS:
-            return True
-        return (review_or_comment.author == request.user
-                or request.user.is_moderator
-                or request.user.is_admin)
+        return ((request.method in SAFE_METHODS)
+                or (review_or_comment.author == request.user
+                    or request.user.is_moderator
+                    or request.user.is_admin))
 
 
 class IsAdminOrReadOnly(BasePermission):

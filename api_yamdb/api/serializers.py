@@ -3,47 +3,48 @@ from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
+
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import EMAIL_MAX_LENGTH, USERNAME_MAX_LENGTH
-from users.validators import validate_username_not_me
+from users.validators import validate_username_not_reserved
 
 User = get_user_model()
 
 
-class AuthorReadOnlySerializer(serializers.ModelSerializer):
+class AuthorFieldSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True,
     )
 
 
-class ReviewSerializer(AuthorReadOnlySerializer):
+class ReviewSerializer(AuthorFieldSerializer):
     """Сериализатор для отзывов."""
 
     class Meta:
         model = Review
         fields = ('id', 'text', 'author', 'score', 'pub_date')
-        read_only_fields = ('author', 'pub_date')
+        read_only_fields = ('title',)
 
     def validate(self, data):
         request = self.context.get('request')
         view = self.context.get('view')
         if not request or not view or request.method != 'POST':
             return data
-
-        title_id = view.kwargs.get('title_id')
-        if request.user.reviews.filter(title_id=title_id).exists():
+        if request.user.reviews.filter(
+            title_id=view.kwargs['title_id']
+        ).exists():
             raise serializers.ValidationError('Вы уже оставляли отзыв.')
         return data
 
 
-class CommentSerializer(AuthorReadOnlySerializer):
+class CommentSerializer(AuthorFieldSerializer):
     """Сериализатор для комментариев."""
 
     class Meta:
         model = Comment
         fields = ('id', 'text', 'author', 'pub_date')
-        read_only_fields = ('author', 'pub_date')
+        read_only_fields = ('review', )
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -105,7 +106,8 @@ class SignUpSerializer(serializers.Serializer):
 
     username = serializers.CharField(
         max_length=USERNAME_MAX_LENGTH,
-        validators=(UnicodeUsernameValidator(), validate_username_not_me),
+        validators=(UnicodeUsernameValidator(),
+                    validate_username_not_reserved),
     )
     email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
 
@@ -135,7 +137,8 @@ class TokenSerializer(serializers.Serializer):
 
     username = serializers.CharField(
         max_length=USERNAME_MAX_LENGTH,
-        validators=(UnicodeUsernameValidator(), validate_username_not_me),
+        validators=(UnicodeUsernameValidator(),
+                    validate_username_not_reserved),
     )
     confirmation_code = serializers.CharField()
 
