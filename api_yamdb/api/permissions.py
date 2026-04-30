@@ -4,13 +4,15 @@ from rest_framework.permissions import (BasePermission,
 
 
 class IsAdmin(BasePermission):
-    
+    """Разрешает доступ только администраторам."""
+
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.is_admin
 
 
 class IsOwnerOrModeratorOrAdminReadOnly(IsAuthenticatedOrReadOnly):
-    
+    """Разрешает изменение автору, модератору или администратору."""
+
     def has_object_permission(self, request, view, review_or_comment):
         if request.method in SAFE_METHODS:
             return True
@@ -20,11 +22,10 @@ class IsOwnerOrModeratorOrAdminReadOnly(IsAuthenticatedOrReadOnly):
 
 
 class IsAdminOrReadOnly(BasePermission):
-    
+    """Разрешает изменение только администратору, чтение — всем."""
+
     def has_permission(self, request, view):
         return (
             request.method in SAFE_METHODS
-            or (request.user.is_authenticated
-                and (request.user.is_admin
-                     or request.user.is_superuser))
+            or (request.user.is_authenticated and request.user.is_admin)
         )
