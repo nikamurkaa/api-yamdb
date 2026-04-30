@@ -15,6 +15,7 @@ DEFAULT_USER_ROLE = 'user'
 
 class Command(BaseCommand):
     """Команда для импорта начальных данных проекта из CSV."""
+
     help = 'Загружает данные из CSV-файлов в базу данных.'
     data_dir = settings.BASE_DIR / 'static' / 'data'
 
@@ -50,12 +51,12 @@ class Command(BaseCommand):
 
     def _get_int(self, row, field_name):
         """Возвращает числовое значение поля из строки CSV."""
-        value = row.get(field_name)
+        raw_value = row.get(field_name)
         try:
-            return int(value)
+            return int(raw_value)
         except (TypeError, ValueError) as error:
             raise CommandError(
-                f'В поле {field_name} указано не число: {value}'
+                f'В поле {field_name} указано не число: {raw_value}'
             ) from error
 
     def _get_optional_int(self, row, field_name):
@@ -137,8 +138,10 @@ class Command(BaseCommand):
                 id=self._get_int(row, 'id'),
                 defaults={
                     'name': row['name'],
-                    'year': self._get_int(row, 'year'),
-                    'category_id': self._get_optional_int(row, 'category'),
+                    'year': self._get_int(row,
+                                          'year'),
+                    'category_id': self._get_optional_int(row,
+                                                          'category'),
                 },
             )
 
@@ -167,7 +170,9 @@ class Command(BaseCommand):
                     'score': self._get_int(row, 'score'),
                 },
             )
-            self._update_pub_date(Review, review.id, row.get('pub_date'))
+            self._update_pub_date(Review,
+                                  review.id,
+                                  row.get('pub_date'))
 
     def _load_comments(self):
         """Загружает комментарии из файла comments.csv."""
@@ -180,4 +185,6 @@ class Command(BaseCommand):
                     'text': row['text'],
                 },
             )
-            self._update_pub_date(Comment, comment.id, row.get('pub_date'))
+            self._update_pub_date(Comment,
+                                  comment.id,
+                                  row.get('pub_date'))
