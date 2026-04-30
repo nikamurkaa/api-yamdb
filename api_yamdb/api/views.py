@@ -3,6 +3,7 @@ import uuid
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.db.models import Avg
+from django.db.models.functions import Round
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, generics, permissions, status, viewsets
@@ -116,7 +117,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Title.objects.select_related('category').prefetch_related(
             'genre'
-        ).annotate(rating=Avg('reviews__score'))
+        ).annotate(rating=Round(Avg('reviews__score')))
 
     def get_serializer_class(self):
         if self.action in {'list', 'retrieve'}:
