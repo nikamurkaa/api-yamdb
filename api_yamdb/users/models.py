@@ -1,41 +1,61 @@
 from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
+
+from .validators import validate_username_not_me
+
+USERNAME_MAX_LENGTH = 150
+EMAIL_MAX_LENGTH = 254
+ROLE_MAX_LENGTH = 20
 
 
 class User(AbstractUser):
-    ROLE_CHOICES = (
-        ('user', 'Пользователь'),
-        ('moderator', 'Модератор'),
-        ('admin', 'Администратор'),
+    class Role(models.TextChoices):
+        USER = 'user', 'Пользователь'
+        MODERATOR = 'moderator', 'Модератор'
+        ADMIN = 'admin', 'Администратор'
+
+    username = models.CharField(
+        max_length=USERNAME_MAX_LENGTH,
+        unique=True,
+        validators=(UnicodeUsernameValidator(), validate_username_not_me),
+        error_messages={
+            'unique': 'Пользователь с таким username уже существует.',
+        },
+        verbose_name='Имя пользователя',
     )
     role = models.CharField(
-        max_length=20,
-        choices=ROLE_CHOICES,
-        default='user',
-        verbose_name='Роль'
+        max_length=ROLE_MAX_LENGTH,
+        choices=Role.choices,
+        default=Role.USER,
+        verbose_name='Роль',
     )
     bio = models.TextField(
         blank=True,
-        verbose_name='Биография'
+        verbose_name='Биография',
     )
     email = models.EmailField(
+        max_length=EMAIL_MAX_LENGTH,
         unique=True,
-        verbose_name='Электронная почта'
+        verbose_name='Электронная почта',
     )
-    confirmation_code = models.CharField(
-        max_length=36,
-        blank=True,
-        null=True,
-        verbose_name='Код подтверждения'
-    )
+
+    class Meta:
+        ordering = ('id',)
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
 
     @property
     def is_admin(self):
-        return self.role == 'admin' or self.is_superuser
+        return (
+            self.role == self.Role.ADMIN
+            or self.is_staff
+            or self.is_superuser
+        )
 
     @property
     def is_moderator(self):
-        return self.role == 'moderator'
+        return self.role == self.Role.MODERATOR or self.is_admin
 
     def __str__(self):
         return self.username
