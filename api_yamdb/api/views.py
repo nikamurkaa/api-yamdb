@@ -110,8 +110,9 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     http_method_names = FULL_CRUD_METHODS
     permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (DjangoFilterBackend,)
+    filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
     filterset_class = TitleFilter
+    ordering_fields = ('name', 'year', 'genre')
 
     def get_queryset(self):
         return Title.objects.select_related('category').prefetch_related(
