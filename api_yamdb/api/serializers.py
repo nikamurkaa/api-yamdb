@@ -13,8 +13,8 @@ from users.validators import validate_username_not_reserved
 User = get_user_model()
 
 
-class AuthorFieldMixin:
-    """Миксин с полем для автора"""
+class AuthorFieldMixin(serializers.ModelSerializer):
+    """Миксин с полем для автора."""
 
     author = serializers.SlugRelatedField(
         slug_field='username',
@@ -22,9 +22,9 @@ class AuthorFieldMixin:
     )
 
 
-class UsernameFieldMixin:
-    """Миксин с полем для имени пользователя"""
-    
+class UsernameFieldMixin(serializers.Serializer):
+    """Миксин с полем для имени пользователя."""
+
     username = serializers.CharField(
         max_length=USERNAME_MAX_LENGTH,
         validators=(UnicodeUsernameValidator(),
@@ -32,7 +32,7 @@ class UsernameFieldMixin:
     )
 
 
-class ReviewSerializer(AuthorFieldMixin, serializers.ModelSerializer):
+class ReviewSerializer(AuthorFieldMixin):
     """Сериализатор для отзывов."""
 
     class Meta:
@@ -54,7 +54,7 @@ class ReviewSerializer(AuthorFieldMixin, serializers.ModelSerializer):
         return data
 
 
-class CommentSerializer(AuthorFieldMixin, serializers.ModelSerializer):
+class CommentSerializer(AuthorFieldMixin):
     """Сериализатор для комментариев."""
 
     class Meta:
@@ -117,7 +117,7 @@ class TitleWriteSerializer(serializers.ModelSerializer):
         return TitleReadSerializer(instance).data
 
 
-class SignUpSerializer(UsernameFieldMixin, serializers.ModelSerializer):
+class SignUpSerializer(UsernameFieldMixin):
     """Сериализатор регистрации пользователя."""
 
     email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
@@ -134,7 +134,8 @@ class SignUpSerializer(UsernameFieldMixin, serializers.ModelSerializer):
 
         if username_exists:
             raise serializers.ValidationError({
-                'username': 'Пользователь с таким username уже существует.'
+                'username':
+                'Пользователь с таким username уже существует.'
             })
         if email_exists:
             raise serializers.ValidationError(
@@ -164,7 +165,7 @@ class SignUpSerializer(UsernameFieldMixin, serializers.ModelSerializer):
         return user
 
 
-class TokenSerializer(UsernameFieldMixin, serializers.ModelSerializer):
+class TokenSerializer(UsernameFieldMixin):
     """Сериализатор получения JWT-токена."""
 
     confirmation_code = serializers.CharField()
