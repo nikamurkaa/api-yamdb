@@ -31,6 +31,8 @@ class ReviewSerializer(AuthorFieldSerializer):
         view = self.context.get('view')
         if not request or not view or request.method != 'POST':
             return data
+        if 'title_id' not in view.kwargs:
+            raise NotFound('Отсутствует id произведения.')
         if request.user.reviews.filter(
             title_id=view.kwargs['title_id']
         ).exists():
@@ -44,7 +46,7 @@ class CommentSerializer(AuthorFieldSerializer):
     class Meta:
         model = Comment
         fields = ('id', 'text', 'author', 'pub_date')
-        read_only_fields = ('review', )
+        read_only_fields = ('review',)
 
 
 class CategorySerializer(serializers.ModelSerializer):
