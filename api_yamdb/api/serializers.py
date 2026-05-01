@@ -1,12 +1,10 @@
 from django.conf import settings
-from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.core.mail import send_mail
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
-
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import EMAIL_MAX_LENGTH, USERNAME_MAX_LENGTH
 from users.validators import validate_username_not_reserved
@@ -18,6 +16,14 @@ class AuthorFieldSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True,
+    )
+
+
+class UsernameFieldMixin(serializers.Serializer):
+    username = serializers.CharField(
+        max_length=USERNAME_MAX_LENGTH,
+        validators=(UnicodeUsernameValidator(),
+                    validate_username_not_reserved),
     )
 
 
@@ -104,14 +110,9 @@ class TitleWriteSerializer(serializers.ModelSerializer):
         return TitleReadSerializer(instance).data
 
 
-class SignUpSerializer(serializers.Serializer):
+class SignUpSerializer(UsernameFieldMixin):
     """Сериализатор регистрации пользователя."""
 
-    username = serializers.CharField(
-        max_length=USERNAME_MAX_LENGTH,
-        validators=(UnicodeUsernameValidator(),
-                    validate_username_not_reserved),
-    )
     email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
 
     def validate(self, data):
@@ -156,14 +157,9 @@ class SignUpSerializer(serializers.Serializer):
         return user
 
 
-class TokenSerializer(serializers.Serializer):
+class TokenSerializer(UsernameFieldMixin):
     """Сериализатор получения JWT-токена."""
 
-    username = serializers.CharField(
-        max_length=USERNAME_MAX_LENGTH,
-        validators=(UnicodeUsernameValidator(),
-                    validate_username_not_reserved),
-    )
     confirmation_code = serializers.CharField()
 
     def validate(self, data):
@@ -176,7 +172,6 @@ class TokenSerializer(serializers.Serializer):
             raise serializers.ValidationError({
                 'confirmation_code': 'Неверный код подтверждения.'
             })
-        data['user'] = user
         return data
 
 
