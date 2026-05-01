@@ -1,7 +1,4 @@
-from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
 from django.db.models import Avg
 from django.db.models.functions import Round
 from django.shortcuts import get_object_or_404
@@ -11,17 +8,16 @@ from rest_framework import (filters, generics, mixins,
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
-
 from reviews.models import Category, Genre, Review, Title
 from .constants import (READ_UPDATE_METHODS, FULL_CRUD_METHODS)
 from .filters import TitleFilter
 from .permissions import (IsAdmin, IsAdminOrReadOnly,
                           IsOwnerOrModeratorOrAdminReadOnly)
 from .serializers import (AdminUserSerializer, CategorySerializer,
-                          CommentSerializer, GenreSerializer,
-                          ReviewSerializer, SignUpSerializer,
-                          TitleReadSerializer, TitleWriteSerializer,
-                          TokenSerializer, UserSerializer)
+                          CommentSerializer, GenreSerializer, ReviewSerializer,
+                          SignUpSerializer, TitleReadSerializer,
+                          TitleWriteSerializer, TokenSerializer,
+                          UserSerializer)
 
 User = get_user_model()
 
@@ -126,23 +122,7 @@ class SignUpView(generics.CreateAPIView):
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        username = serializer.validated_data['username']
-        email = serializer.validated_data['email']
-        user, created = User.objects.get_or_create(
-            username=username,
-            defaults={'email': email},
-        )
-        if created:
-            user.set_unusable_password()
-            user.save(update_fields=('password',))
-        confirmation_code = default_token_generator.make_token(user)
-        send_mail(
-            subject='Код подтверждения YaMDb',
-            message=f'Ваш код подтверждения: {confirmation_code}',
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=(email,),
-            fail_silently=True,
-        )
+        serializer.save()
         return Response(serializer.data)
 
 
@@ -155,7 +135,7 @@ class TokenView(generics.CreateAPIView):
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
+        user = User.objects.get(username=serializer.validated_data['username'])
         token = AccessToken.for_user(user)
         return Response({'token': str(token)})
 

@@ -1,9 +1,10 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.core.mail import send_mail
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
-
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import EMAIL_MAX_LENGTH, USERNAME_MAX_LENGTH
 from users.validators import validate_username_not_reserved
@@ -15,6 +16,14 @@ class AuthorFieldSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True,
+    )
+
+
+class UsernameFieldMixin(serializers.Serializer):
+    username = serializers.CharField(
+        max_length=USERNAME_MAX_LENGTH,
+        validators=(UnicodeUsernameValidator(),
+                    validate_username_not_reserved),
     )
 
 
@@ -103,14 +112,9 @@ class TitleWriteSerializer(serializers.ModelSerializer):
         return TitleReadSerializer(instance).data
 
 
-class SignUpSerializer(serializers.Serializer):
+class SignUpSerializer(UsernameFieldMixin):
     """Сериализатор регистрации пользователя."""
 
-    username = serializers.CharField(
-        max_length=USERNAME_MAX_LENGTH,
-        validators=(UnicodeUsernameValidator(),
-                    validate_username_not_reserved),
-    )
     email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
 
     def validate(self, data):
@@ -133,15 +137,31 @@ class SignUpSerializer(serializers.Serializer):
             )
         return data
 
+    def create(self, validated_data):
+        username = validated_data['username']
+        email = validated_data['email']
+        user, created = User.objects.get_or_create(
+            username=username,
+            defaults={'email': email},
+        )
+        if created:
+            user.set_unusable_password()
+            user.save(update_fields=('password',))
+        confirmation_code = default_token_generator.make_token(user)
+        send_mail(
+            subject='Код подтверждения YaMDb',
+            message=f'Ваш код подтверждения: {confirmation_code}',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=(email,),
+            fail_silently=True,
+        )
 
-class TokenSerializer(serializers.Serializer):
+        return user
+
+
+class TokenSerializer(UsernameFieldMixin):
     """Сериализатор получения JWT-токена."""
 
-    username = serializers.CharField(
-        max_length=USERNAME_MAX_LENGTH,
-        validators=(UnicodeUsernameValidator(),
-                    validate_username_not_reserved),
-    )
     confirmation_code = serializers.CharField()
 
     def validate(self, data):
@@ -154,7 +174,6 @@ class TokenSerializer(serializers.Serializer):
             raise serializers.ValidationError({
                 'confirmation_code': 'Неверный код подтверждения.'
             })
-        data['user'] = user
         return data
 
 
