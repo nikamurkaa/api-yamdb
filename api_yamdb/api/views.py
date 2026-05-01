@@ -55,11 +55,12 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = (IsOwnerOrModeratorOrAdminReadOnly,)
 
     def get_review(self):
-        if 'review_id' not in self.kwargs:
+        if 'title_id' not in self.kwargs:
             raise NotFound(detail="В запросе не указан id произведения.")
         if 'review_id' not in self.kwargs:
             raise NotFound(detail="В запросе не указан id отзыва.")
-        return get_object_or_404(Review, pk=self.kwargs['review_id'])
+        return get_object_or_404(Review, pk=self.kwargs['review_id'],
+                                 title_id=self.kwargs['title_id'])
 
     def get_queryset(self):
         return self.get_review().comments.all()
