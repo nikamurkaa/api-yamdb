@@ -5,6 +5,9 @@ from .constants import RESERVED_USERNAMES
 
 def validate_username_not_reserved(username):
     """Проверка, что username не равен зарезервированным значениям."""
-    if username.lower() in RESERVED_USERNAMES:
-        raise ValidationError(f'Username {username.lower()} запрещён.')
+    normalized_username = username.lower()
+
+    if normalized_username in RESERVED_USERNAMES:
+        error_text = f'Username {normalized_username} запрещён.'
+        raise ValidationError(error_text)
     return username
