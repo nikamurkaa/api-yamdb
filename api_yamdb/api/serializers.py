@@ -5,6 +5,7 @@ from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.mail import send_mail
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
+
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import EMAIL_MAX_LENGTH, USERNAME_MAX_LENGTH
 from users.validators import validate_username_not_reserved
@@ -12,14 +13,18 @@ from users.validators import validate_username_not_reserved
 User = get_user_model()
 
 
-class AuthorFieldSerializer(serializers.ModelSerializer):
+class AuthorFieldMixin:
+    """Миксин с полем для автора"""
+
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True,
     )
 
 
-class UsernameFieldMixin(serializers.Serializer):
+class UsernameFieldMixin:
+    """Миксин с полем для имени пользователя"""
+    
     username = serializers.CharField(
         max_length=USERNAME_MAX_LENGTH,
         validators=(UnicodeUsernameValidator(),
@@ -27,7 +32,7 @@ class UsernameFieldMixin(serializers.Serializer):
     )
 
 
-class ReviewSerializer(AuthorFieldSerializer):
+class ReviewSerializer(AuthorFieldMixin, serializers.ModelSerializer):
     """Сериализатор для отзывов."""
 
     class Meta:
@@ -49,7 +54,7 @@ class ReviewSerializer(AuthorFieldSerializer):
         return data
 
 
-class CommentSerializer(AuthorFieldSerializer):
+class CommentSerializer(AuthorFieldMixin, serializers.ModelSerializer):
     """Сериализатор для комментариев."""
 
     class Meta:
@@ -112,7 +117,7 @@ class TitleWriteSerializer(serializers.ModelSerializer):
         return TitleReadSerializer(instance).data
 
 
-class SignUpSerializer(UsernameFieldMixin):
+class SignUpSerializer(UsernameFieldMixin, serializers.ModelSerializer):
     """Сериализатор регистрации пользователя."""
 
     email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
@@ -159,7 +164,7 @@ class SignUpSerializer(UsernameFieldMixin):
         return user
 
 
-class TokenSerializer(UsernameFieldMixin):
+class TokenSerializer(UsernameFieldMixin, serializers.ModelSerializer):
     """Сериализатор получения JWT-токена."""
 
     confirmation_code = serializers.CharField()
