@@ -22,7 +22,10 @@
 - проверкой confirmation code в `TokenSerializer` и выдачей access token;
 - исправлениями после code review, flake8 и документацией команды.
 
-Связанные командные PR: `Feature/nikol-fixes` и `Feature/fix 1 review nikol` в upstream-репозитории.
+Связанные командные PR в upstream-репозитории:
+
+- [`Feature/nikol-fixes` — PR #11](https://github.com/psa88/api-yamdb/pull/11);
+- [`Feature/fix 1 review nikol` — PR #17](https://github.com/psa88/api-yamdb/pull/17).
 
 ## Возможности
 
