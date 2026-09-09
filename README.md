@@ -1,52 +1,54 @@
+**English** | [Русский](README.ru.md)
+
 # API YaMDb
 
-**API YaMDb** — командный учебный проект на Django REST Framework для сервиса отзывов и оценок произведений: книг, фильмов, музыки и других категорий.
+**API YaMDb** is an educational team project built with Django REST Framework for reviewing and rating titles: books, films, music, and other categories.
 
-Через API пользователи могут регистрироваться, получать JWT-токены, просматривать произведения, оставлять отзывы и комментарии. В проекте реализованы роли пользователей, фильтрация, рейтинг произведений и административные сценарии.
+Through the API, users can sign up, obtain JWT tokens, browse titles, and leave reviews and comments. The project implements user roles, filtering, title ratings, and administrative workflows.
 
-> Этот репозиторий является fork итогового командного репозитория [`psa88/api-yamdb`](https://github.com/psa88/api-yamdb). Ниже отдельно зафиксирован мой вклад в командную реализацию.
+> This repository is a fork of the team's final repository, [`psa88/api-yamdb`](https://github.com/psa88/api-yamdb). My contributions to the team implementation are documented separately below.
 
-## Мой вклад
+## My contributions
 
-По истории командных pull requests я работала над следующими частями проекта:
+The team's pull request history records my work on the following parts of the project:
 
-- расчётом рейтинга произведений по средней оценке отзывов;
-- валидацией года произведения: нельзя создать произведение из будущего;
-- корректным форматом ответа при создании и изменении произведений;
-- сериализацией отзывов в соответствии со схемой API;
-- проверкой связи `review_id` и `title_id` при работе с комментариями;
-- ограничением методов для `/api/v1/users/me/`;
-- запретом зарезервированного username `me`;
-- моделью пользователя, ролями и helper-свойствами ролей;
-- signup-flow и отправкой `confirmation_code`;
-- проверкой confirmation code в `TokenSerializer` и выдачей access token;
-- исправлениями после code review, flake8 и документацией команды.
+- calculating title ratings as the average of review scores;
+- validating the title year to prevent creating titles dated in the future;
+- returning the correct response format when creating and updating titles;
+- serializing reviews according to the API schema;
+- validating the relationship between `review_id` and `title_id` when handling comments;
+- restricting methods for `/api/v1/users/me/`;
+- disallowing the reserved username `me`;
+- the user model, roles, and role helper properties;
+- the signup flow and delivery of `confirmation_code`;
+- confirmation code validation in `TokenSerializer` and access token issuance;
+- fixes following code review, flake8 checks, and team documentation.
 
-Связанные командные PR в upstream-репозитории:
+Related team PRs in the upstream repository:
 
 - [`Feature/nikol-fixes` — PR #11](https://github.com/psa88/api-yamdb/pull/11);
 - [`Feature/fix 1 review nikol` — PR #17](https://github.com/psa88/api-yamdb/pull/17).
 
-## Возможности
+## Features
 
-- регистрация по `username` и `email`;
-- отправка `confirmation_code`;
-- JWT-аутентификация;
-- роли `user`, `moderator`, `admin`;
-- управление пользователями через API;
-- CRUD произведений;
-- категории и жанры;
-- отзывы и оценки от 1 до 10;
-- комментарии к отзывам;
-- ограничение «один отзыв пользователя на одно произведение»;
-- автоматический рейтинг произведения;
-- фильтрация по категории, жанру, названию и году;
-- поиск по справочникам и пользователям;
-- пагинация;
-- импорт начальных данных из CSV;
-- ReDoc-документация.
+- registration with `username` and `email`;
+- delivery of `confirmation_code`;
+- JWT authentication;
+- `user`, `moderator`, and `admin` roles;
+- user management through the API;
+- title CRUD;
+- categories and genres;
+- reviews and scores from 1 to 10;
+- comments on reviews;
+- one review per user per title;
+- automatic title ratings;
+- filtering by category, genre, name, and year;
+- search across reference data and users;
+- pagination;
+- initial data import from CSV;
+- ReDoc documentation.
 
-## Стек
+## Tech stack
 
 - Python
 - Django
@@ -57,67 +59,67 @@
 - pytest
 - Postman
 
-## Роли и права доступа
+## Roles and permissions
 
-| Роль | Права |
+| Role | Permissions |
 | --- | --- |
-| Аноним | Чтение произведений, категорий, жанров, отзывов и комментариев |
-| `user` | Возможности анонима + собственные отзывы и комментарии |
-| `moderator` | Возможности пользователя + изменение/удаление любых отзывов и комментариев |
-| `admin` | Полное управление пользователями, категориями, жанрами и произведениями |
+| Anonymous | Read titles, categories, genres, reviews, and comments |
+| `user` | Anonymous permissions + own reviews and comments |
+| `moderator` | User permissions + edit/delete any reviews and comments |
+| `admin` | Full management of users, categories, genres, and titles |
 
-## Основные endpoint'ы
+## Main endpoints
 
-Все API-маршруты начинаются с `/api/v1/`.
+All API routes start with `/api/v1/`.
 
-| Ресурс | Endpoint |
+| Resource | Endpoint |
 | --- | --- |
-| Регистрация | `/api/v1/auth/signup/` |
+| Registration | `/api/v1/auth/signup/` |
 | JWT | `/api/v1/auth/token/` |
-| Пользователи | `/api/v1/users/` |
-| Текущий пользователь | `/api/v1/users/me/` |
-| Категории | `/api/v1/categories/` |
-| Жанры | `/api/v1/genres/` |
-| Произведения | `/api/v1/titles/` |
-| Отзывы | `/api/v1/titles/{title_id}/reviews/` |
-| Комментарии | `/api/v1/titles/{title_id}/reviews/{review_id}/comments/` |
+| Users | `/api/v1/users/` |
+| Current user | `/api/v1/users/me/` |
+| Categories | `/api/v1/categories/` |
+| Genres | `/api/v1/genres/` |
+| Titles | `/api/v1/titles/` |
+| Reviews | `/api/v1/titles/{title_id}/reviews/` |
+| Comments | `/api/v1/titles/{title_id}/reviews/{review_id}/comments/` |
 
-## Демонстрация API
+## API demonstration
 
-### Документация и регистрация пользователя
+### Documentation and user registration
 
-ReDoc описывает доступные endpoint'ы, схемы запросов и ответов, а также возможные ошибки API.
+ReDoc describes the available endpoints, request and response schemas, and possible API errors.
 
-![API YaMDb — ReDoc и регистрация пользователя](docs/assets/api-yamdb-redoc-signup.png)
+![API YaMDb — ReDoc and user registration](docs/assets/api-yamdb-redoc-signup.png)
 
-### Получение списка произведений
+### Retrieving titles
 
-API возвращает пагинированный список произведений с рейтингом, жанрами и категориями.
+The API returns a paginated list of titles with ratings, genres, and categories.
 
-![API YaMDb — список произведений](docs/assets/api-yamdb-titles-endpoint.png)
+![API YaMDb — title list](docs/assets/api-yamdb-titles-endpoint.png)
 
-### Работа с отзывами
+### Working with reviews
 
-Отзывы доступны через вложенные endpoint'ы произведений; API поддерживает получение, изменение и удаление отдельных отзывов с учётом прав доступа.
+Reviews are available through nested title endpoints; the API supports retrieving, updating, and deleting individual reviews according to access permissions.
 
-![API YaMDb — работа с отзывами](docs/assets/api-yamdb-review-endpoint.png)
+![API YaMDb — working with reviews](docs/assets/api-yamdb-review-endpoint.png)
 
-## Локальный запуск
+## Local setup
 
-Команды выполняются из корня клонированного репозитория. Используйте Python 3.12.
-Для Windows PowerShell вместо `source venv/bin/activate` выполните
-`.\venv\Scripts\Activate.ps1`. После запуска откройте http://127.0.0.1:8000/.
-Сервер занимает терминал; остановка — `Ctrl+C`. Тесты запускайте из корня
-репозитория в отдельном терминале с активированным окружением.
+Run the commands from the root of the cloned repository. Use Python 3.12.
+In Windows PowerShell, replace `source venv/bin/activate` with
+`.\venv\Scripts\Activate.ps1`. Once the server starts, open http://127.0.0.1:8000/.
+The server runs in the foreground; stop it with `Ctrl+C`. Run tests from the repository
+root in a separate terminal with the virtual environment activated.
 
-Клонировать этот fork:
+Clone this fork:
 
 ```bash
 git clone https://github.com/nikamurkaa/api-yamdb.git
 cd api-yamdb
 ```
 
-Создать и активировать виртуальное окружение:
+Create and activate a virtual environment:
 
 ```bash
 python -m venv venv
@@ -135,14 +137,14 @@ Linux/macOS:
 source venv/bin/activate
 ```
 
-Установить зависимости:
+Install dependencies:
 
 ```bash
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Подготовить базу:
+Prepare the database:
 
 ```bash
 cd api_yamdb
@@ -150,7 +152,7 @@ python manage.py migrate
 python manage.py load_csv
 ```
 
-Запустить сервер:
+Start the server:
 
 ```bash
 python manage.py runserver
@@ -168,21 +170,21 @@ ReDoc:
 http://127.0.0.1:8000/redoc/
 ```
 
-## Проверка
+## Verification
 
-Из корня проекта:
+From the project root:
 
 ```bash
 pytest
 flake8
 ```
 
-В `postman_collection/` находится коллекция для ручной API-проверки.
+The `postman_collection/` directory contains a collection for manual API testing.
 
-## Авторы командного проекта
+## Team project authors
 
-- [Сергей Прядко](https://github.com/psa88)
-- [Николь Журбенко](https://github.com/nikamurkaa)
-- [Андрей Львов](https://github.com/eternal-git-dev)
+- [Sergey Pryadko](https://github.com/psa88)
+- [Nicole Zhurbenko](https://github.com/nikamurkaa)
+- [Andrey Lvov](https://github.com/eternal-git-dev)
 
-Проект выполнен в рамках курса **«Python-разработчик» Яндекс Практикума**.
+The project was completed as part of the **Yandex Practicum Python Developer course**.
